@@ -84,15 +84,32 @@ Please note that this example is not exhaustive.
             logger.debug("%s : completed", f.path)
 
     def main():
-        client = TorrentClient()
-        client.loop()
-        # use big buck bunny magnet
-        magnet ="magnet:?xt=urn:btih:0E876CE2A1A504F849CA72A5E2BC07347B3BC957&dn=big+buck+bunny+720p+psiclone&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce"
+        # starts client with 100Mib/s download limit
+        # and 10Mib/s uploadlimit
+        client = TorrentClient(
+            download_rate_limit=100 << 20,
+            upload_rate_limit=10 << 20,
+        )
+
+        # start client alert dispatcher
+        client.start()
+
+        to_download=[
+            # support local torrentfile
+            "./big_buck_bunny.torrent"
+            # also magnet url
+            "magnet:?xt=urn:btih:0E876CE2A1A504F849CA72A5E2BC07347B3BC957&dn=big+buck+bunny+720p+psiclone&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce",
+            # also from http/https url
+            "http://www.frostclick.com/torrents/video/animation/Big_Buck_Bunny_1080p_surround_frostclick.com_frostwire.com.torrent",
+        ]
 
         try:
-            client.add(magnet, is_paused=True, alert_handler=AlertHandler(imdb))
-            while True:
-                time.sleep(1)
+            for item in to_download:
+                client.add(item, is_paused=True, alert_handler=AlertHandler())
+
+            # Blocking loop
+            client.loop()
+
         except (KeyboardInterrupt, Exception) as e:
             client.stop()
 
