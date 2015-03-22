@@ -2,9 +2,6 @@
 Stupid, simple torrent client
 ===============================
 
-.. image:: https://img.shields.io/travis/jcsaaddupuy/sstc.svg
-        :target: https://travis-ci.org/jcsaaddupuy/sstc
-
 .. image:: https://img.shields.io/pypi/v/sstc.svg
         :target: https://pypi.python.org/pypi/sstc
 
@@ -13,7 +10,24 @@ Stupid, simple torrent client built on top of libtorrent python binding.
 
 Let you add torrents files and magnet and receive libtorrent alerts. That's all !
 
-Full example :
+* Free software: WTFPL
+
+Features
+--------
+
+* TODO
+
+Full example
+-------------
+This example show how to add a magnet uri and how to create an alert handler.
+
+Alert handler methods sould be named 'on\_ALERT', with ALERT the type of alert
+to handle.
+
+All methods will receive the session as first argument and the alert
+as the second.
+
+Pleasenotethatthosexampleis not exhaustive.
 
 .. code-block:: python
 
@@ -46,11 +60,13 @@ Full example :
             info = handler.get_torrent_info()
             files = info.files()
             # Do something with torrent infos, like filter files to download
+            # torrent was added paused, we resume it
             handler.resume()
 
         def on_torrent_finished_alert(self, session, alert):
             logger.debug("on_torrent_finished_alert")
-            session.remove_torrent(handler)
+            # if you want to remove the torrent immediately :
+            #session.remove_torrent(handler)
 
         def on_piece_finished_alert(self, session, alert):
             logger.debug("on_torrent_finished_alert")
@@ -82,12 +98,4 @@ Full example :
 
     if __name__ == "__main__":
         main()
-```
 
-* Free software: BSD license
-* Documentation: https://sstc.readthedocs.org.
-
-Features
---------
-
-* TODO
