@@ -23,23 +23,23 @@ test_requirements = [
 ]
 
 setup(
-    name='tcs',
+    name='sstc',
     version='0.1.0',
     description="Simple torrent client",
     long_description=readme + '\n\n' + history,
     author="Jean-Christophe Saad-Dupuy",
     author_email='jc.saaddupuy@fsfe.org',
-    url='https://github.com/jcsaaddupuy/tcs',
+    url='https://github.com/jcsaaddupuy/sstc',
     packages=[
-        'tcs',
+        'sstc',
     ],
-    package_dir={'tcs':
-                 'tcs'},
+    package_dir={'sstc':
+                 'sstc'},
     include_package_data=True,
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
-    keywords='tcs',
+    keywords='sstc',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',

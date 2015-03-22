@@ -19,7 +19,6 @@ class TcDeadProxyError(TcError):
     pass
 
 
-
 class TorrentClient(object):
 
     def __init__(self,
@@ -38,9 +37,9 @@ class TorrentClient(object):
         self.session = lt.session()
         self.session.listen_on(port_in, port_out)
         self.session.set_alert_mask(
-                lt.alert.category_t.storage_notification +
-                lt.alert.category_t.status_notification +
-                lt.alert.category_t.progress_notification
+            lt.alert.category_t.storage_notification +
+            lt.alert.category_t.status_notification +
+            lt.alert.category_t.progress_notification
         )
 
         self.proxy_type = proxy_type
@@ -118,21 +117,34 @@ class TorrentClient(object):
         }
         return lt.add_magnet_uri(self.session, magnet, params)
 
-    def add_torrent(self, torrent_path, download_path=None, alert_handler=None):
+    def add_torrent(self, torrent_path, download_path=None, is_paused=False, alert_handler=None):
         torrent_path = os.path.abspath(torrent_path)
         handler = self._add_torrent(torrent_path, download_path)
-
+        if is_paused:
+            handler.pause()
         self.alert_handlers[handler.name()] = alert_handler
 
-    def add_magnet(self, magnet, download_path=None, alert_handler=None):
+    def add_magnet(self, magnet, download_path=None, is_paused=False, alert_handler=None):
         handler = self._add_magnet(magnet, download_path)
+        if is_paused:
+            handler.pause()
         self.alert_handlers[handler.name()] = alert_handler
 
-    def add(self, what, download_path=None, alert_handler=None):
+    def add(self, what, download_path=None, is_paused=False, alert_handler=None):
         if what.startswith("magnet:"):
-            return self.add_magnet(what, download_path, alert_handler)
+            return self.add_magnet(
+                what,
+                download_path=download_path,
+                is_paused=is_paused,
+                alert_handler=alert_handler,
+            )
         elif os.path.isfile(what):
-            return self.add_torrent(what, download_path, alert_handler)
+            return self.add_torrent(
+                what,
+                download_path=download_path,
+                is_paused=is_paused,
+                alert_handler=alert_handler,
+            )
         else:
             raise ValueError("%s not usable", what)
 
@@ -158,7 +170,7 @@ class TorrentClient(object):
             m_name = "on_%s" % (alert.__class__.__name__)
             method = getattr(alert_handler, m_name, None)
             if not method:
-                #logger.debug("No method for %s", m_name)
+                logger.debug("No method for %s", m_name)
                 continue
             try:
                 method(self.session, alert)

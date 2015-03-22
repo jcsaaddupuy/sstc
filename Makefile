@@ -35,7 +35,7 @@ clean-test:
 	rm -fr htmlcov/
 
 lint:
-	flake8 tcs tests
+	flake8 sstc tests
 
 test:
 	python setup.py test
@@ -44,15 +44,15 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source tcs setup.py test
+	coverage run --source sstc setup.py test
 	coverage report -m
 	coverage html
 	open htmlcov/index.html
 
 docs:
-	rm -f docs/tcs.rst
+	rm -f docs/sstc.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ tcs
+	sphinx-apidoc -o docs/ sstc
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html

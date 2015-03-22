@@ -1,18 +1,18 @@
 ===============================
-tcs
+sstc
 ===============================
 
-.. image:: https://img.shields.io/travis/jcsaaddupuy/tcs.svg
-        :target: https://travis-ci.org/jcsaaddupuy/tcs
+.. image:: https://img.shields.io/travis/jcsaaddupuy/sstc.svg
+        :target: https://travis-ci.org/jcsaaddupuy/sstc
 
-.. image:: https://img.shields.io/pypi/v/tcs.svg
-        :target: https://pypi.python.org/pypi/tcs
+.. image:: https://img.shields.io/pypi/v/sstc.svg
+        :target: https://pypi.python.org/pypi/sstc
 
 
 Simple torrent client
 
 * Free software: BSD license
-* Documentation: https://tcs.readthedocs.org.
+* Documentation: https://sstc.readthedocs.org.
 
 Features
 --------

@@ -2,6 +2,6 @@
 Usage
 ========
 
-To use tcs in a project::
+To use sstc in a project::
 
-    import tcs
+    import sstc

@@ -4,9 +4,9 @@ Installation
 
 At the command line::
 
-    $ easy_install tcs
+    $ easy_install sstc
 
 Or, if you have virtualenvwrapper installed::
 
-    $ mkvirtualenv tcs
-    $ pip install tcs
+    $ mkvirtualenv sstc
+    $ pip install sstc

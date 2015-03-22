@@ -2,15 +2,15 @@
 # -*- coding: utf-8 -*-
 
 """
-test_tcs
+test_sstc
 ----------------------------------
 
-Tests for `tcs` module.
+Tests for `sstc` module.
 """
 
 import unittest
 
-from tcs import tcs
+from sstc import sstc
 
 
 class TestTcs(unittest.TestCase):
