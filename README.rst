@@ -27,7 +27,7 @@ to handle.
 All methods will receive the session as first argument and the alert
 as the second.
 
-Pleasenotethatthosexampleis not exhaustive.
+Please note that this example is not exhaustive.
 
 .. code-block:: python
 
