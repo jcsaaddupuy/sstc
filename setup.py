@@ -15,17 +15,17 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read().replace('.. :changelog:', '')
 
 requirements = [
-    # TODO: put package requirements here
+    # Nothing at the moment
 ]
 
 test_requirements = [
-    # TODO: put package test requirements here
+    # Nothing at the moment
 ]
 
 setup(
     name='sstc',
     version='0.1.0',
-    description="Simple torrent client",
+    description="Simple torrent client on top of libtorrent rasterbar",
     long_description=readme + '\n\n' + history,
     author="Jean-Christophe Saad-Dupuy",
     author_email='jc.saaddupuy@fsfe.org',
