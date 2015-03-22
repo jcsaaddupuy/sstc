@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import os
+import time
 import threading
 
-import libtorrent as lt
-
 import socket
+
+import libtorrent as lt
+import requests
 
 import logging
 logger = logging.getLogger(__name__)
@@ -30,12 +32,25 @@ class TorrentClient(object):
                  proxy_host=None,
                  proxy_port=None,
 
-                 anonymous_mode=False
+                 anonymous_mode=False,
+                 # session limits
+                 download_rate_limit=0,
+                 upload_rate_limit=0,
+                 # per torrents
+                 download_limit=0,
+                 upload_limit=0
                  ):
 
         self.download_path = download_path
         self.session = lt.session()
         self.session.listen_on(port_in, port_out)
+        # set session limits
+        self.session.set_download_rate_limit(download_rate_limit)
+        self.session.set_upload_rate_limit(upload_rate_limit)
+        # store per torrent settings
+        self.download_limit = download_limit
+        self.upload_limit = upload_limit
+
         self.session.set_alert_mask(
             lt.alert.category_t.storage_notification +
             lt.alert.category_t.status_notification +
@@ -97,10 +112,9 @@ class TorrentClient(object):
         if not self.is_proxy_alive(proxy_host, proxy_port):
             raise TcDeadProxyError("Could not connect to proxy")
 
-    def _add_torrent(self, torrent_path, download_path=None):
-        e = lt.bdecode(open(torrent_path, 'rb').read())
+    def _add_torrent_content(self, bdecoded, is_paused=False, download_path=None, download_limit=0, upload_limit=0):
 
-        info = lt.torrent_info(e)
+        info = lt.torrent_info(bdecoded)
 
         params = {
             'save_path': download_path or self.download_path,
@@ -108,42 +122,66 @@ class TorrentClient(object):
             'ti': info
         }
 
-        return self.session.add_torrent(params)
+        handler = self.session.add_torrent(params)
+        handler.set_download_limit(download_limit or self.download_limit)
+        handler.set_upload_limit(upload_limit or self.upload_limit)
 
-    def _add_magnet(self, magnet, download_path=None):
+        if is_paused:
+            handler.pause()
+        return handler
+
+
+    def _add_magnet(self, magnet, is_paused=False, download_path=None, download_limit=0, upload_limit=0):
         params = {
             'save_path': download_path or self.download_path,
             'storage_mode': lt.storage_mode_t.storage_mode_sparse,
         }
-        return lt.add_magnet_uri(self.session, magnet, params)
+        handler = lt.add_magnet_uri(self.session, magnet, params)
 
-    def add_torrent(self, torrent_path, download_path=None, is_paused=False, alert_handler=None):
+        handler.set_download_limit(download_limit or self.download_limit)
+        handler.set_upload_limit(upload_limit or self.upload_limit)
+
+        if is_paused:
+            handler.pause()
+        return handler
+
+    def add_torrent(self, torrent_path, alert_handler=None, *args, **kwargs):
         torrent_path = os.path.abspath(torrent_path)
-        handler = self._add_torrent(torrent_path, download_path)
-        if is_paused:
-            handler.pause()
+        bdecoded = lt.bdecode(open(torrent_path, 'rb').read())
+        handler = self._add_torrent_content(bdecoded, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
 
-    def add_magnet(self, magnet, download_path=None, is_paused=False, alert_handler=None):
-        handler = self._add_magnet(magnet, download_path)
-        if is_paused:
-            handler.pause()
+    def add_magnet(self, magnet, alert_handler=None, *args, **kwargs):
+        handler = self._add_magnet(magnet, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
 
-    def add(self, what, download_path=None, is_paused=False, alert_handler=None):
+    def add_url(self, url, alert_handler, *args, **kwargs):
+        resp = requests.get(url)
+        bdecoded = lt.bdecode(resp.content)
+        handler = self._add_torrent_content(bdecoded, *args, **kwargs)
+        self.alert_handlers[handler.name()] = alert_handler
+
+    def add(self, what, alert_handler=None, *args, **kwargs):
         if what.startswith("magnet:"):
             return self.add_magnet(
                 what,
-                download_path=download_path,
-                is_paused=is_paused,
                 alert_handler=alert_handler,
+                *args,
+                **kwargs
             )
         elif os.path.isfile(what):
             return self.add_torrent(
                 what,
-                download_path=download_path,
-                is_paused=is_paused,
                 alert_handler=alert_handler,
+                *args,
+                **kwargs
+            )
+        elif what.startswith("http://") or what.startswith("https://"):
+            return self.add_url(
+                what,
+                alert_handler=alert_handler,
+                *args,
+                **kwargs
             )
         else:
             raise ValueError("%s not usable", what)
@@ -177,8 +215,15 @@ class TorrentClient(object):
             except Exception:
                 logger.exception("Error calling handler")
 
-    def loop(self):
+    def start(self):
         self._loop_thread.start()
+
+    def loop(self):
+        try:
+            while True:
+                time.sleep(1)
+        except (KeyboardInterrupt, Exception):
+            self.stop()
 
     def __len__(self):
         return len(self.session.get_torrents())
