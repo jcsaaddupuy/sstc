@@ -56,9 +56,11 @@ class TorrentClient(object):
         self.upload_limit = upload_limit
 
         self.session.set_alert_mask(
-            lt.alert.category_t.storage_notification +
-            lt.alert.category_t.status_notification +
-            lt.alert.category_t.progress_notification
+            lt.alert.category_t.storage_notification
+            | lt.alert.category_t.status_notification
+            | lt.alert.category_t.progress_notification
+            | lt.alert.category_t.error_notification
+            | lt.alert.category_t.all_categories
         )
 
         self.proxy_type = proxy_type
