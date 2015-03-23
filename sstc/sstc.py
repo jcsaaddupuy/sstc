@@ -12,6 +12,8 @@ import requests
 import logging
 logger = logging.getLogger(__name__)
 
+logger_alerts = logging.getLogger("%s.alert" % __name__)
+
 
 class TcError(Exception):
     pass
@@ -150,16 +152,19 @@ class TorrentClient(object):
         bdecoded = lt.bdecode(open(torrent_path, 'rb').read())
         handler = self._add_torrent_content(bdecoded, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
+        logger.info("Added %s", handler.name())
 
     def add_magnet(self, magnet, alert_handler=None, *args, **kwargs):
         handler = self._add_magnet(magnet, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
+        logger.info("Added %s", handler.name())
 
     def add_url(self, url, alert_handler, *args, **kwargs):
         resp = requests.get(url)
         bdecoded = lt.bdecode(resp.content)
         handler = self._add_torrent_content(bdecoded, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
+        logger.info("Added %s", handler.name())
 
     def add(self, what, alert_handler=None, *args, **kwargs):
         if what.startswith("magnet:"):
@@ -187,9 +192,11 @@ class TorrentClient(object):
             raise ValueError("%s not usable", what)
 
     def stop(self):
+        logger.info("Stopping")
         self.e_stop.set()
         if self._loop_thread.start != threading.currentThread():
             self._loop_thread.join()
+        # Should remove all torrents here
 
     def _loop(self):
         while not self.e_stop.isSet():
@@ -198,9 +205,13 @@ class TorrentClient(object):
             if not alert:
                 continue
 
+            if type(alert) is lt.alert:
+                logger.debug(alert.what())
+                continue
+
             handle = getattr(alert, "handle", None)
             if not handle:
-                logger.debug("No handle for %s", alert.__class__.__name__)
+                logger_alerts.debug("No handle for %s", alert.__class__.__name__)
                 continue
             alert_handler = self.alert_handlers.get(alert.handle.name(), None)
             if not alert_handler:
@@ -208,7 +219,7 @@ class TorrentClient(object):
             m_name = "on_%s" % (alert.__class__.__name__)
             method = getattr(alert_handler, m_name, None)
             if not method:
-                logger.debug("No method for %s", m_name)
+                logger_alerts.debug("%s : No method for %s", handle.name(), m_name)
                 continue
             try:
                 method(self.session, alert)
@@ -216,6 +227,7 @@ class TorrentClient(object):
                 logger.exception("Error calling handler")
 
     def start(self):
+        logger.info("Starting")
         self._loop_thread.start()
 
     def loop(self):
