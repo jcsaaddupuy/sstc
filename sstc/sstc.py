@@ -27,8 +27,10 @@ class TorrentClient(object):
 
     def __init__(self,
                  download_path='./',
-                 port_in=6881,
-                 port_out=6891,
+
+                 port_start=6881,
+                 port_ends=6891,
+                 interface=None,
 
                  proxy_type=None,
                  proxy_host=None,
@@ -36,16 +38,16 @@ class TorrentClient(object):
 
                  anonymous_mode=False,
                  # session limits
-                 download_rate_limit=0,
-                 upload_rate_limit=0,
+                 download_rate_limit=-1,
+                 upload_rate_limit=-1,
                  # per torrents
-                 download_limit=0,
-                 upload_limit=0
+                 download_limit=-1,
+                 upload_limit=-1
                  ):
 
         self.download_path = download_path
         self.session = lt.session()
-        self.session.listen_on(port_in, port_out)
+        self.session.listen_on(port_start, port_ends, interface)
         # set session limits
         self.session.set_download_rate_limit(download_rate_limit)
         self.session.set_upload_rate_limit(upload_rate_limit)
