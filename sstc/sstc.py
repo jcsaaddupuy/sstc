@@ -136,7 +136,6 @@ class TorrentClient(object):
             handler.pause()
         return handler
 
-
     def _add_magnet(self, magnet, is_paused=False, download_path=None, download_limit=0, upload_limit=0):
         params = {
             'save_path': download_path or self.download_path,
@@ -228,7 +227,14 @@ class TorrentClient(object):
             try:
                 method(self.session, alert)
             except Exception:
-                logger.exception("Error calling handler")
+                logger_alerts.exception("Error calling handler")
+            finally:
+                if type(alert) == lt.torrent_removed_alert:
+                    try:
+                        del self.alert_handlers[alert.handle.name()]
+                        logger.debug("Handler for %s removed", alert.handle.name())
+                    except KeyError:
+                        pass
 
     def start(self):
         logger.info("Starting")
