@@ -42,7 +42,8 @@ class TorrentClient(object):
                  upload_rate_limit=-1,
                  # per torrents
                  download_limit=-1,
-                 upload_limit=-1
+                 upload_limit=-1,
+                 user_agent = None
                  ):
 
         self.download_path = download_path
@@ -55,12 +56,15 @@ class TorrentClient(object):
         self.download_limit = download_limit
         self.upload_limit = upload_limit
 
+        self.user_agent = user_agent
+
         self.session.set_alert_mask(
             lt.alert.category_t.storage_notification
             | lt.alert.category_t.status_notification
-            | lt.alert.category_t.progress_notification
+            # | lt.alert.category_t.progress_notification
             | lt.alert.category_t.error_notification
-            | lt.alert.category_t.all_categories
+            | lt.alert.category_t.stats_notification
+            # | lt.alert.category_t.all_categories
         )
 
         self.proxy_type = proxy_type
@@ -70,16 +74,18 @@ class TorrentClient(object):
         # if self.is_proxy_alive(proxy_host, proxy_port):
         self.check_proxy()
         self.configure_proxy()
-        self.configure(anonymous_mode)
+        self.configure(anonymous_mode, user_agent)
 
         self.alert_handlers = {}
 
         self._loop_thread = threading.Thread(target=self._loop)
         self.e_stop = threading.Event()
 
-    def configure(self, anonymous_mode):
+    def configure(self, anonymous_mode, user_agent=None):
         settings = lt.session_settings()
         settings.anonymous_mode = anonymous_mode
+        if user_agent:
+            settings.user_agent = user_agent
         self.session.set_settings(settings)
 
     def configure_proxy(self, proxy_type=None, proxy_host=None, proxy_port=None):
@@ -163,7 +169,14 @@ class TorrentClient(object):
         logger.info("Added %s", handler.name())
 
     def add_url(self, url, alert_handler, *args, **kwargs):
-        resp = requests.get(url)
+        if self.user_agent:
+            headers = {
+                'User-Agent': self.user_agent,
+            }
+            resp = requests.get(url, headers=headers)
+        else:
+            resp = requests.get(url)
+
         bdecoded = lt.bdecode(resp.content)
         handler = self._add_torrent_content(bdecoded, *args, **kwargs)
         self.alert_handlers[handler.name()] = alert_handler
@@ -197,9 +210,14 @@ class TorrentClient(object):
     def stop(self):
         logger.info("Stopping")
         self.e_stop.set()
+        for handler in self.session.get_torrents():
+            try:
+                self.session.remove_torrent(handler, option=1)
+            except Exception as e:
+                logger.error("Could not remove torrent : %s", getattr(e, 'message', 'Unkown error'))
+
         if self._loop_thread.start != threading.currentThread():
             self._loop_thread.join()
-        # Should remove all torrents here
 
     def _loop(self):
         while not self.e_stop.isSet():
