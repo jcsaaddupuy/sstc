@@ -14,6 +14,13 @@ logger = logging.getLogger(__name__)
 
 logger_alerts = logging.getLogger("%s.alert" % __name__)
 
+ALERT_MASK_STORAGE = lt.alert.category_t.storage_notification
+ALERT_MASK_STATUS = lt.alert.category_t.status_notification
+ALERT_MASK_PROGRESS = lt.alert.category_t.progress_notification
+ALERT_MASK_ERROR = lt.alert.category_t.error_notification
+ALERT_MASK_STATS = lt.alert.category_t.stats_notification
+ALERT_MASK_ALL = lt.alert.category_t.all_categories
+
 
 class TcError(Exception):
     pass
@@ -43,7 +50,9 @@ class TorrentClient(object):
                  # per torrents
                  download_limit=-1,
                  upload_limit=-1,
-                 user_agent = None
+                 user_agent = None,
+
+                 alert_mask = ALERT_MASK_STORAGE | ALERT_MASK_STATUS | ALERT_MASK_STATS | ALERT_MASK_ERROR,
                  ):
 
         self.download_path = download_path
@@ -57,15 +66,8 @@ class TorrentClient(object):
         self.upload_limit = upload_limit
 
         self.user_agent = user_agent
-
-        self.session.set_alert_mask(
-            lt.alert.category_t.storage_notification
-            | lt.alert.category_t.status_notification
-            # | lt.alert.category_t.progress_notification
-            | lt.alert.category_t.error_notification
-            | lt.alert.category_t.stats_notification
-            # | lt.alert.category_t.all_categories
-        )
+        if alert_mask is not None:
+            self.session.set_alert_mask(alert_mask)
 
         self.proxy_type = proxy_type
         self.proxy_host = proxy_host
